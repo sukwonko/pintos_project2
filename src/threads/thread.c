@@ -51,7 +51,7 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
-int64_t next_tick_to_awake = INT64_MAX; /* minimal tick of wakeup tick in sleep_list */
+int64_t next_tick_to_awake; /* minimal tick of wakeup tick in sleep_list */
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -209,8 +209,9 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-  test_max_priority ();
-
+  if(t-> priority > thread_current()-> priority){
+    thread_yield();
+  }
   return tid;
 }
 
@@ -351,7 +352,7 @@ thread_set_priority (int new_priority)
     return ;
   thread_current ()->init_priority = new_priority;
   refresh_priority ();
-  if (thread_current ()->wait_on_lock != NULL)
+  if (thread_current ()->priority > old_priority)
     donate_priority ();
 
   test_max_priority ();
