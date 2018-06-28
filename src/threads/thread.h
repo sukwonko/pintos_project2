@@ -4,8 +4,6 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-#include "threads/synch.h"
-#include "filesys/file.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -25,10 +23,6 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
-
-/* File Descriptor */
-#define FD_MIN 2
-#define FD_MAX 128
 
 /* A kernel thread or user process.
 
@@ -104,10 +98,6 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-    // MLFQ
-    int nice;
-    int recent_cpu;
-
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -115,26 +105,8 @@ struct thread
     /* wakeup tick */
     int64_t wakeup_tick;
 
-    // Implement process hierarchy
-    struct thread *parent;              /* Parent process descriptor. */
-    struct list children;               /* List of child process. */
-    struct list_elem child;             /* Child process element. */
-    bool memory_load_success;           /* Check if process creation success. */
-    bool process_dead;                  /* Check if process dead. */
-    struct semaphore load;              /* Wait semaphore. */
-    struct semaphore exit;              /* Exit semaphore. */
-    int exit_status;                    /* Exit status. */
-
-    // File Descriptor Table
-    struct file *fd_table[FD_MAX];      /* File Descriptor Table. */
-    int fd_size;                        /* File Descriptor Size */
-
-    // Running File: Denying write to executable
-    struct file *run_file;
-
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-
   };
 
 /* If false (default), use round-robin scheduler.
@@ -173,8 +145,6 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-// Process hierarchy
-
 void thread_sleep (int64_t ticks);  /* sleep running thread */
 void thread_awake (int64_t ticks);  /* wakeup thread in thread sleep_list */
 void update_next_tick_to_awake (int64_t ticks); /* update minimal wakeup_tick */
@@ -190,12 +160,5 @@ bool cmp_priority (const struct list_elem *a, const struct list_elem *b, void *a
 void donate_priority(void);                 /* Priority donation */
 void remove_with_lock(struct lock *lock);   /* Remove thread entry from donation list*/
 void refresh_priority(void);                /* Recalaulate priority */
-
-// MLFQ
-void mlfqs_priority (struct thread *t);
-void mlfqs_recent_cpu (struct thread *t);
-void mlfqs_load_avg (void);
-void mlfqs_increment (void);
-void mlfqs_recalc (void);
 
 #endif /* threads/thread.h */
