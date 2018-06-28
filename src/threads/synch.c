@@ -203,19 +203,15 @@ lock_acquire (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
-
-  if (lock->holder != NULL)
-  {
-    if (list_size (&lock->holder->donations) < 8)
-    {
-      thread_current ()->wait_on_lock = lock;
-      list_push_back (&lock->holder->donations, &thread_current ()->donation_elem);
-      donate_priority ();
-    }
+  struct thread *cur = thread_current();
+  if (lock->holder != NULL){
+  	cur->wait_on_lock = lock;
+	list_push_back(&lock->holder->donations, &cur->donation_elem);
+	donate_priority();
   }
 
   sema_down (&lock->semaphore);
-  thread_current ()->wait_on_lock = NULL;  // Priority Inversion Problem
+  cur->wait_on_lock = NULL;  // Priority Inversion Problem
   lock->holder = thread_current ();
 }
 
